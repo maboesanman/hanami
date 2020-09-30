@@ -66,6 +66,72 @@ impl Genotype {
         let allele_4 = self.0 & 0b00_00_00_11;
         [allele_1, allele_2, allele_3, allele_4]
     }
+
+    pub fn get_base_3(&self) -> u8 {
+        let [mut a1, mut a2, mut a3, mut a4] = self.get_genes();
+
+        a1 = match a1 {
+            3 => 2,
+            0 => 0,
+            _ => 1
+        };
+        a2 = match a2 {
+            3 => 2,
+            0 => 0,
+            _ => 1
+        };
+        a3 = match a3 {
+            3 => 2,
+            0 => 0,
+            _ => 1
+        };
+        a4 = match a4 {
+            3 => 2,
+            0 => 0,
+            _ => 1
+        };
+
+        27 * a1 + 9 * a2 + 3 * a3 + a4
+    }
+
+    pub fn from_base_3(mut from: u8) -> Genotype {
+        let mut a4 = from % 3;
+        from = from / 3;
+        let mut a3 = from % 3;
+        from = from / 3;
+        let mut a2 = from % 3;
+        from = from / 3;
+        let mut a1 = from % 3;
+
+        a1 = match a1 {
+            0 => 0,
+            1 => 1,
+            2 => 3,
+            _ => unreachable!()
+        };
+        a2 = match a2 {
+            0 => 0,
+            1 => 1,
+            2 => 3,
+            _ => unreachable!()
+        };
+        a3 = match a3 {
+            0 => 0,
+            1 => 1,
+            2 => 3,
+            _ => unreachable!()
+        };
+        a4 = match a4 {
+            0 => 0,
+            1 => 1,
+            2 => 3,
+            _ => unreachable!()
+        };
+
+        let x = (a1 << 6) + (a2 << 4) + (a3 << 2) + (a4);
+
+        Self::new(x)
+    }
 }
 
 pub struct BreedResultIter {
