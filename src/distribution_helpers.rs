@@ -26,7 +26,7 @@ lazy_static! {
             }
         }
 
-        breed_mat.to_csr()
+        breed_mat
     };
 }
 
@@ -50,18 +50,18 @@ fn process_flower(flower_type: &FlowerType) {
     let mut new_genotype_map_mat = CsMat::zero((0, map_slice.len())).to_csc();
     let mut new_genotype_map_vec = Vec::new();
     let mut new_color_filters = HashMap::new();
-    for (row, color) in map_slice.iter().enumerate() {
-        let col = new_genotype_map_vec.iter().rposition(|x| x == color);
+    for (row, &color) in map_slice.iter().enumerate() {
+        let col = new_genotype_map_vec.iter().rposition(|x| x == &color);
         let col = match col {
             Some(col) => col,
             None => {
-                new_genotype_map_vec.push(*color);
-                new_color_filters.insert((*flower_type, *color), CsMat::zero((map_slice.len(), map_slice.len())));
+                new_genotype_map_vec.push(color);
+                new_color_filters.insert((*flower_type, color), CsMat::zero((map_slice.len(), map_slice.len())));
                 new_genotype_map_vec.len() - 1
             }
         };
         new_genotype_map_mat.insert(row, col, 1f32);
-        new_color_filters.get_mut(&(*flower_type, *color)).unwrap().insert(row, row, 1f32);
+        new_color_filters.get_mut(&(*flower_type, color)).unwrap().insert(row, row, 1f32);
     }
     let mut genotype_maps = GENOTYPE_MAPS.write().unwrap();
     genotype_maps.insert(*flower_type, (new_genotype_map_vec, new_genotype_map_mat));
@@ -69,15 +69,14 @@ fn process_flower(flower_type: &FlowerType) {
     color_filters.extend(new_color_filters.into_iter());
 }
 
-pub fn breed(a: &Distribution, b: &Distribution) -> Vec<Distribution> {
+pub fn breed(a: &Distribution, b: &Distribution) -> Vec<(f32, Distribution)> {
     if a.flower_type != b.flower_type {
         panic!()
     }
-    println!("{:?}", a.inner);
-    println!("{:?}", b.inner);
     let spread_mat = &(a.inner.col_view::<usize>()) * &b.inner.row_view();
     let spread_vec = as_one_row(spread_mat);
-    let breed_dist = &spread_vec * &BREED_MATRIX;
+    let breed_mat = &BREED_MATRIX;
+    let breed_dist = &spread_vec * &breed_mat;
 
     let flower_type = a.flower_type;
     process_flower(&flower_type);
@@ -90,14 +89,20 @@ pub fn breed(a: &Distribution, b: &Distribution) -> Vec<Distribution> {
 
     
     let mut outputs = Vec::new();
-    for (color, probability) in color_vec.iter().zip(color_dist.iter()) {
+    for (color, &probability) in color_vec.iter().zip(color_dist.iter()) {
+        if probability == 0f32 {
+            continue;
+        }
         let mut filtered = &breed_dist * color_filters.get(&(flower_type, *color)).unwrap();
         filtered.map_inplace(|x| x / probability);
-        outputs.push(Distribution {
-            flower_type,
-            flower_color: *color,
-            inner: filtered,
-        })
+        outputs.push((
+            probability, 
+            Distribution {
+                flower_type,
+                flower_color: *color,
+                inner: filtered,
+            }
+        ))
     }
 
     outputs

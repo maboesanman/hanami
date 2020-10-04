@@ -1,6 +1,7 @@
 use crate::{distribution::dist_index_from_genotype, genotype::Genotype};
+use serde::Serialize;
 
-#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone, Serialize)]
 pub enum FlowerType {
     Rose,
     Cosmo,
@@ -12,7 +13,7 @@ pub enum FlowerType {
     Windflower,
 }
 
-#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone, Serialize)]
 pub enum FlowerColor {
     White,
     Yellow,
